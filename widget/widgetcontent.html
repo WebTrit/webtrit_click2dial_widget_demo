@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="public/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebTrit Widget</title>
+    <link rel="stylesheet" href="src/styles/widget.css">
+    <script>
+
+        window.startCall = async function () {
+            window.connectedSuccessfully = false;
+
+            if (window.webTritSignaling) {
+                await window.webTritSignaling.connect();
+            } else {
+                parent.window.postMessage("start_call", "*");
+            }
+        };
+
+        window.endCall = function () {
+            window.connectedSuccessfully = true;
+            if (window.webTritSignaling) {
+                window.webTritSignaling.hangup();
+            } else {
+                parent.window.postMessage("end_call", "*");
+            }
+
+            parent.window.postMessage("removetheiframe_success", "*");
+        };
+
+        window.onTimeTrigger = function () {
+            if (window.stopTrigger || !window.connectTime) return;
+
+            let statusLabel = document.getElementById('timingcontainer');
+            const difference = new Date() - window.connectTime;
+            const inSeconds = Math.floor(difference / 1000);
+            const seconds = inSeconds % 60;
+            const minutes = (inSeconds - seconds) / 60;
+            statusLabel.innerText = (minutes + '').padStart(2, '0') + ':' + (seconds + '').padStart(2, '0');
+
+            setTimeout(window.onTimeTrigger, 1000);
+        };
+
+        window.enableDialButtons = function (enable) {
+            let dialButtons = document.getElementsByClassName('number-pad-item');
+            for (const el of dialButtons) {
+                if (enable) {
+                    if (el.classList.contains('pad-disable')) {
+                        el.classList.remove('pad-disable');
+                    }
+                    if (!el.classList.contains('pad-enable')) {
+                        el.classList.add('pad-enable');
+                    }
+                } else {
+                    if (el.classList.contains('pad-enable')) {
+                        el.classList.remove('pad-enable');
+                    }
+                    if (!el.classList.contains('pad-disable')) {
+                        el.classList.add('pad-disable');
+                    }
+                }
+            }
+        };
+
+        window.updateStatusCallback = function (status) {
+            let statusLabel = document.getElementById('timingcontainer');
+
+            if (statusLabel) {
+                switch (status) {
+                    case 'Accepted':
+                        statusLabel.innerText = 'Accepted...';
+                        break;
+                    case 'Disconnected':
+                        statusLabel.innerText = 'Disconnected...';
+                        break;
+                    case 'Registered':
+                        statusLabel.innerText = 'Registered...';
+                        break;
+                    case 'Changed':
+                        statusLabel.innerText = 'Changed...';
+                        break;
+                    case 'Error':
+                        statusLabel.innerText = 'Error';
+                        break;
+                    case 'Start':
+                        statusLabel.innerText = 'Start...';
+                        break;
+                    default:
+                        statusLabel.innerText = status + '...';
+                        break;
+                }
+            }
+
+            if (status === 'Connected' || status === 'Accepted') {
+                window.connectedSuccessfully = true;
+                window.connectTime = new Date();
+                window.stopTrigger = false;
+                window.enableDialButtons(true);
+                setTimeout(window.onTimeTrigger, 1000);
+            }
+
+            if (status === 'Disconnected') {
+                window.stopTrigger = true;
+                parent.window.postMessage(window.connectedSuccessfully
+                    ? "removetheiframe_success"
+                    : "removetheiframe_failure", "*");
+            }
+        };
+
+        window.sendDtmf = function (ch) {
+            if (!window.connectedSuccessfully) return;
+            let charsLabel = document.getElementById('typedNumberContainer');
+            charsLabel.innerText += ch;
+            if (window.webTritSignaling) {
+                window.webTritSignaling?.sendDtmf(ch);
+            } else {
+                parent.window.postMessage(ch, "*");
+            }
+        }
+
+        window.clickDialButton = function (event) {
+            if (event.target.classList.contains('pad-disable')) {
+                return;
+            }
+            const ch = event.target.innerText;
+            window.sendDtmf(ch);
+        };
+
+        window.addEventListener('load', () => {
+            window.startCall();
+        });
+
+        window.muteAudio = function () {
+            if (window.muted === undefined) {
+                window.muted = false;
+            }
+            window.muted = !window.muted;
+            if (window.webTritSignaling) {
+                window.webTritSignaling.muteAudio(!window.muted);
+            } else {
+                parent.window.postMessage(!window.muted ? "mute_audio" : "unmute_audio", "*");
+            }
+
+            let microphoneIcon = document.getElementById('microphoneicon');
+            if (microphoneIcon) {
+                const svg = microphoneIcon.firstElementChild;
+                svg.src = window.muted ? '/src/assets/muted.svg' : '/src/assets/microphone.svg';
+            }
+        };
+
+        const receiveMessage = function (event) {
+            if (event.data && event.data.type === "status_update" && event.data.data) {
+                window.updateStatusCallback(event.data.data);
+            }
+        };
+        window.addEventListener("message", receiveMessage, false);
+
+    </script>
+</head>
+<body style="margin: 0; overflow: hidden;">
+<div class="main-content-container">
+    <div class="logo-icon-container">
+        <img src="/src/assets/webtrit.png" class="logo-icon">
+    </div>
+
+    <div class="header-container">
+        Call to company contact centre
+    </div>
+
+    <div class="timing-container" id="timingcontainer"></div>
+
+    <div class="typed-number-container">
+        <span id="typedNumberContainer" class="numbers-input-text"></span>
+    </div>
+
+    <div class="action-buttons-container">
+        <div class="action-button central" onclick="window.endCall();">
+            <div>
+                <img src="/src/assets/call.svg">
+            </div>
+        </div>
+        <div class="action-button" onclick="window.muteAudio();">
+            <div id="microphoneicon">
+                <img src="/src/assets/microphone.svg">
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
