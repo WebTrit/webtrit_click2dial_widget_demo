@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="/widget/favicon.ico">
+    <link rel="icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebTrit Widget</title>
-    <link rel="stylesheet" href="/widget/widget.css">
+    <link rel="stylesheet" href="widget.css">
     <script>
 
         window.startCall = async function () {
@@ -145,7 +145,7 @@
             let microphoneIcon = document.getElementById('microphoneicon');
             if (microphoneIcon) {
                 const svg = microphoneIcon.firstElementChild;
-                svg.src = window.muted ? '/widget/assets/muted.svg' : '/widget/assets/microphone.svg';
+                svg.src = window.muted ? 'assets/muted.svg' : 'assets/microphone.svg';
             }
         };
 
@@ -161,7 +161,7 @@
 <body style="margin: 0; overflow: hidden;">
 <div class="main-content-container">
     <div class="logo-icon-container">
-        <img src="/widget/assets/webtrit.png" class="logo-icon">
+        <img src="assets/webtrit.png" class="logo-icon">
     </div>
 
     <div class="header-container">
@@ -177,12 +177,12 @@
     <div class="action-buttons-container">
         <div class="action-button central" onclick="window.endCall();">
             <div>
-                <img src="/widget/assets/call.svg">
+                <img src="assets/call.svg">
             </div>
         </div>
         <div class="action-button" onclick="window.muteAudio();">
             <div id="microphoneicon">
-                <img src="/widget/assets/microphone.svg">
+                <img src="assets/microphone.svg">
             </div>
         </div>
     </div>
